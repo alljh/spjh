@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="匿名石牌 - 現代化匿名發文平台">
+    <title>匿名石牌 - 現代化發文應用</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <meta name="theme-color" content="#BC7BD2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+</head>
+<body class="h-full overflow-y-auto bg-gradient-to-br from-purple-50 to-white">
+    <div class="min-h-full flex flex-col">
+        <main class="flex-grow py-10 px-4 sm:py-20 sm:px-6 lg:px-12">
+            <div class="mx-auto max-w-3xl">
+                <div class="card p-14 mb-10 backdrop-blur-lg bg-white/90 rounded-3xl shadow-2xl border border-purple-500/20 hover:shadow-purple-300/30 transition-all duration-500">
+                    <h1 class="text-7xl font-black text-center mb-16 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 drop-shadow-2xl animate__animated animate__fadeIn">匿名石牌</h1>
+                    
+                    <form id="postForm" class="space-y-12 text-center">
+                        <div class="transform hover:scale-[1.02] transition-all duration-300">
+                            <label for="postContent" class="block text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 drop-shadow-lg">分享你的想法</label>
+                            <textarea 
+                                id="postContent" 
+                                name="postContent" 
+                                rows="6" 
+                                class="w-full px-8 py-6 rounded-2xl mx-auto border-2 border-purple-400/40 focus:border-purple-500 focus:ring-4 focus:ring-purple-400/30 transition-all duration-300 ease-out bg-white/80 text-lg backdrop-blur-sm"
+                                placeholder="寫下你的想法..."></textarea>
+                            <p id="charCount" class="mt-5 text-xl text-purple-400 font-medium tracking-wide">已輸入 0 字</p>
+                        </div>
+
+                        <div class="transform hover:scale-[1.02] transition-all duration-300">
+                            <label class="block text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 drop-shadow-lg">添加圖片</label>
+                            <div class="media-upload-area hover:shadow-2xl hover:shadow-purple-500/20 bg-gradient-to-br from-white to-purple-50">
+                                <label class="cursor-pointer upload-button hover:shadow-xl">
+                                    <span class="text-xl font-bold">選擇檔案</span>
+                                    <input id="postMedia" name="postMedia" type="file" accept="image/*" class="hidden">
+                                </label>
+                            </div>
+                            <div id="mediaPreview" class="mt-10 grid gap-6"></div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" id="submitButton" class="submit-button w-full py-6 px-12 text-2xl font-extrabold flex items-center justify-center space-x-4 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 text-white rounded-2xl shadow-2xl hover:shadow-purple-500/30 transform hover:scale-[1.02] transition-all duration-300">
+                                <span>發布貼文</span>
+                                <svg class="h-8 w-8 ml-3 animate__animated animate__slideInLeft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                    <p id="postCount" class="mt-10 text-2xl text-purple-400 font-semibold tracking-wide text-center">目前貼文數量：0</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
