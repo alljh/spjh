@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* 保持原有的 CSS 樣式不變 */
         * {
             margin: 0;
             padding: 0;
@@ -204,7 +203,6 @@
     <div id="approvedPostsContainer"></div>
 
     <script>
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAzqCGmaVBSET4EuZeozA8Z1Wqz5NjM2CU",
   authDomain: "brave-streamer-415008.firebaseapp.com",
@@ -218,53 +216,6 @@ const firebaseConfig = {
         const db = firebase.firestore();
 
         // 獲取並顯示留言
-        async function loadPosts() {
-            const pendingContainer = document.getElementById('pendingPostsContainer');
-            const approvedContainer = document.getElementById('approvedPostsContainer');
-            
-            pendingContainer.innerHTML = '<div class="loading">載入中...</div>';
-            approvedContainer.innerHTML = '<div class="loading">載入中...</div>';
-
-            try {
-                // 分別查詢待審核和已批准的留言，並限制每次載入的數量
-                const pendingSnapshot = await db.collection('posts')
-                    .where('approved', '==', false)
-                    .orderBy('createdAt', 'desc')
-                    .limit(10)
-                    .get();
-
-                const approvedSnapshot = await db.collection('posts')
-                    .where('approved', '==', true)
-                    .orderBy('createdAt', 'desc')
-                    .limit(10)
-                    .get();
-
-                pendingContainer.innerHTML = '';
-                approvedContainer.innerHTML = '';
-
-                if (pendingSnapshot.empty && approvedSnapshot.empty) {
-                    pendingContainer.innerHTML = '<div class="no-posts">目前還沒有待審核留言</div>';
-                    approvedContainer.innerHTML = '<div class="no-posts">目前還沒有已批准留言</div>';
-                } else {
-                    pendingSnapshot.forEach(doc => {
-                        const postData = doc.data();
-                        const postElement = createPostElement(doc.id, postData);
-                        pendingContainer.appendChild(postElement);
-                    });
-
-                    approvedSnapshot.forEach(doc => {
-                        const postData = doc.data();
-                        const postElement = createPostElement(doc.id, postData);
-                        approvedContainer.appendChild(postElement);
-                    });
-                }
-            } catch (error) {
-                console.error("載入留言時發生錯誤：", error);
-                pendingContainer.innerHTML = '<div class="error-message">載入留言失敗，請稍後再試</div>';
-                approvedContainer.innerHTML = '<div class="error-message">載入留言失敗，請稍後再試</div>';
-            }
-        }
-
         function createPostElement(docId, postData) {
             const postElement = document.createElement('div');
             postElement.className = 'post-card';
@@ -318,7 +269,6 @@ const firebaseConfig = {
                 await db.collection('posts').doc(docId).update({
                     approved: true
                 });
-                loadPosts(); // 重新載入貼文
             } catch (error) {
                 console.error("批准貼文時發生錯誤：", error);
                 alert("批准貼文失敗，請稍後再試");
@@ -330,7 +280,6 @@ const firebaseConfig = {
             if (confirm('確定要刪除這則留言嗎？')) {
                 try {
                     await db.collection('posts').doc(docId).delete();
-                    loadPosts(); // 重新載入貼文
                 } catch (error) {
                     console.error("刪除貼文時發生錯誤：", error);
                     alert("刪除貼文失敗，請稍後再試");
@@ -470,64 +419,61 @@ const firebaseConfig = {
             try {
                 const snapshot = await db.collection('posts')
                     .where('published', '==', true)
-                    .orderBy('createdAt', 'desc')
+                    .orderBy('createdAt', 'asc')  // 改用 createdAt 而不是 timestamp
                     .get();
                 
-                return snapshot.size + 1;
+                if (snapshot.empty) {
+                    return 1;
+                }
+
+                // 獲取所有已發布的貼文並按時間排序
+                const posts = snapshot.docs.map((doc, index) => {
+                    return {
+                        id: doc.id,
+                        number: index + 1,
+                        ...doc.data()
+                    };
+                });
+
+                // 找出最大的編號
+                const maxNumber = posts.length;
+                return maxNumber + 1;
                 
             } catch (error) {
-                console.error("獲取貼文編號時發生錯誤：", error);
+                if (error.code === 'failed-precondition') {
+                    console.error("查詢需要索引。您可以在此處創建它： https://console.firebase.google.com/v1/r/project/ctjh-84ffc/firestore/indexes?create_composite=Ckhwcm9qZWN0cy9jdGpoLTg0ZmZjL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9wb3N0cy9pbmRleGVzL18QARoNCglwdWJsaXNoZWQQARoNCgljcmVhdGVkQXQQARoMCghfX25hbWVfXxAB");
+                } else {
+                    console.error("獲取貼文編號時發生錯誤：", error);
+                }
                 return 1;
             }
         }
 
-        // 分別監聽待審核和已批准的留言
-        const unsubscribePending = db.collection('posts')
-            .where('approved', '==', false)
-            .orderBy('createdAt', 'desc')
-            .limit(10)
+        // 實時監聽留言變化
+        db.collection('posts').orderBy('createdAt', 'desc')
             .onSnapshot(snapshot => {
                 const pendingContainer = document.getElementById('pendingPostsContainer');
-                pendingContainer.innerHTML = '';
-
-                if (snapshot.empty) {
-                    pendingContainer.innerHTML = '<div class="no-posts">目前還沒有待審核留言</div>';
-                } else {
-                    snapshot.forEach(doc => {
-                        const postData = doc.data();
-                        const postElement = createPostElement(doc.id, postData);
-                        pendingContainer.appendChild(postElement);
-                    });
-                }
-            });
-
-        const unsubscribeApproved = db.collection('posts')
-            .where('approved', '==', true)
-            .orderBy('createdAt', 'desc')
-            .limit(10)
-            .onSnapshot(snapshot => {
                 const approvedContainer = document.getElementById('approvedPostsContainer');
+                
+                pendingContainer.innerHTML = '';
                 approvedContainer.innerHTML = '';
 
                 if (snapshot.empty) {
+                    pendingContainer.innerHTML = '<div class="no-posts">目前還沒有待審核留言</div>';
                     approvedContainer.innerHTML = '<div class="no-posts">目前還沒有已批准留言</div>';
                 } else {
                     snapshot.forEach(doc => {
                         const postData = doc.data();
                         const postElement = createPostElement(doc.id, postData);
-                        approvedContainer.appendChild(postElement);
+                        
+                        if (postData.approved) {
+                            approvedContainer.appendChild(postElement);
+                        } else {
+                            pendingContainer.appendChild(postElement);
+                        }
                     });
                 }
             });
-
-        // 頁面載入時顯示留言
-        loadPosts();
-
-        // 在頁面卸載時取消訂閱
-        window.addEventListener('unload', () => {
-            unsubscribePending();
-            unsubscribeApproved();
-        });
     </script>
 </body>
 </html>
