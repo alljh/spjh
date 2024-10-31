@@ -1,4 +1,3 @@
-// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAzqCGmaVBSET4EuZeozA8Z1Wqz5NjM2CU",
     authDomain: "brave-streamer-415008.firebaseapp.com", 
@@ -6,10 +5,10 @@ const firebaseConfig = {
     storageBucket: "brave-streamer-415008.appspot.com",
     messagingSenderId: "415155981046",
     appId: "1:415155981046:web:673979afa261a63ac37ad7"
-  };
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-      const storage = firebase.storage();
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
 const postContent = document.getElementById('postContent');
 const charCount = document.getElementById('charCount');
@@ -87,18 +86,49 @@ document.getElementById('postForm').addEventListener('submit', async function(e)
         const ipData = await ipResponse.json();
         const ipAddress = ipData.ip;
         
-        // 處理媒體文件上傳
         const mediaUrls = [];
+        
+        // 處理上傳的圖片
         if (postMedia.files.length > 0) {
             const file = postMedia.files[0];
             const storageRef = storage.ref('media/' + Date.now() + '_' + file.name);
             await storageRef.put(file);
             const url = await storageRef.getDownloadURL();
             mediaUrls.push({
-                url: url, 
+                url: url,
                 type: 'image'
             });
         }
+        
+        // 處理選擇的GIF
+        const gifPreview = mediaPreview.querySelector('img[src^="https://media"]');
+        if (gifPreview) {
+            // 從 Giphy URL 獲取 GIF 數據
+            const response = await fetch(gifPreview.src);
+            const blob = await response.blob();
+            
+            // 上傳到 Firebase Storage
+            const storageRef = storage.ref('media/gif_' + Date.now() + '.gif');
+            await storageRef.put(blob);
+            const url = await storageRef.getDownloadURL();
+            
+            mediaUrls.push({
+                url: url,
+                type: 'gif'
+            });
+        }
+
+        // 獲取所有用戶
+        const usersSnapshot = await db.collection('users').get();
+        const users = usersSnapshot.docs;
+        
+        if (users.length === 0) {
+            throw new Error('沒有可用的用戶');
+        }
+
+        // 隨機選擇一個用戶
+        const randomUser = users[Math.floor(Math.random() * users.length)];
+        const assignedUser = randomUser.data().name;
 
         const postData = {
             content: content,
@@ -108,10 +138,11 @@ document.getElementById('postForm').addEventListener('submit', async function(e)
             status: 'pending',
             createdDate: new Date().toISOString(),
             replyCount: 0,
-            isReply: false
+            isReply: false,
+            assignedUser: randomUser.id
         };
 
-        // 直接創建新貼文
+        // 創建新貼文
         await db.collection('posts').add(postData);
 
         // 重置表單
